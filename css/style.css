@@ -890,7 +890,8 @@ body {
   .aside .search-btn {
     right: -37px;
     height: 32px;
-    color: #fff; }
+    color: #fff;
+    outline: 0; }
   .aside .search-btn:hover {
     color: #19f; }
   .aside .search-data {

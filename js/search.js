@@ -21,6 +21,12 @@
     search( dom.searchText.value );
   };
 
+  dom.searchText.onkeydown = function (event){
+    if(event.keyCode === 13){
+      search( dom.searchText.value );
+    }
+  };
+
   // 关闭
   dom.searchClose.onclick = function () {
     dom.searchData.style.display = "none";
@@ -137,7 +143,8 @@
           regExp = new RegExp( "(" + key.replace( /\s/g, "|" ) + ")", "gmi" );
 
       loadData( function ( data ) {
-        result = data.filter( function ( post ) {
+        console.log(data)
+        result = data.posts.filter( function ( post ) {
           return match( post, regExp );
         } );
 
