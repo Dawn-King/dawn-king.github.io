@@ -91,20 +91,20 @@
 
 		imgScale.prototype = {
 			init: function(param){
-				this.event(param)
+				this.bindEvent(param)
 			},
-			event: function(param){
+			bindEvent: function(param){
 				var addFile = $('#addFile');
 				var _this = this;
 				addFile.on('change', function(){
 					var files = $(this).get(0).files[0];
 					
-						if(!$('#width1').val() && !$('#height1').val()){
-							alert('请输入大小');
-							return;
-						}
-						param.width = $('#width1').val() ;
-						param.height = $('#height1').val();
+					if(!$('#width1').val() && !$('#height1').val()){
+						alert('请输入大小');
+						return;
+					}
+					param.width = $('#width1').val() ;
+					param.height = $('#height1').val();
 
 					if(_this.checkImgType(files.type)){
 						_this.getBase64(files)
@@ -115,10 +115,6 @@
 							var size = _this.getSize(param, img)
 							_this.drawImg(img, param, size)
 						});
-					
-						if(param.preOriginalImg){
-							_this.preOriginalImg(param.preOriginalImg, files.name)
-						}
 						addFile.val('')
 					}else{
 						alert('请上传jpg或jpeg或png格式图片！')
@@ -179,10 +175,6 @@
 			checkImgType: function(type){
 				// 接受 jpeg, jpg, png 类型的图片
 				return /(jpeg|jpg|png)/i.test(type)
-			},
-			// 预览原始图片
-			preOriginalImg: function(selector, src){
-				$(selector).html('').append('<img src="'+src+'" alt="" id="img">')
 			}
 		}
 
@@ -193,7 +185,6 @@
 			'height': 150,
 			'upload': '#addFile',
 			'preview': '#myCanvas',
-			'preOriginalImg':'#original',
 			'callback': aaa
 		})
 		
