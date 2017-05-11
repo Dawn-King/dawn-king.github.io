@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>imgScale</title>
+	<style>
+		body{ font-size: 14px; line-height: 24px; }
+		label{ display: block; }
+		fieldset{ width: -webkit-min-content; }
+	</style>
+</head>
+<body>
+	<fieldset>
+		<legend>设置大小</legend>
+		<label>宽度：<input type="number" id="width1" placeholder="宽度" value="100"></label>
+		<label>高度：<input type="number" id="height1" placeholder="高度"></label>
+	</fieldset>
+	<label><input type="file" id="addFile"></label>
+	<canvas id="myCanvas"></canvas>
+	<div id="original"></div>
+	<script src="https://s.ssl.qhres.com/lib/jquery/183.js"></script>
+	
+	<script>
+		var pubsub = {};
+		(function (q) {
+
+		    var topics = {}, // 回调函数存放的数组
+		        subUid = -1;
+		    // 发布方法
+		    q.publish = function (topic, args) {
+
+		        if (!topics[topic]) {
+		            return false;
+		        }
+
+		        setTimeout(function () {
+		            var subscribers = topics[topic],
+		                len = subscribers ? subscribers.length : 0;
+
+		            while (len--) {
+		                subscribers[len].func(topic, args);
+		            }
+		        }, 0);
+
+		        return true;
+
+		    };
+		    //订阅方法
+		    q.subscribe = function (topic, func) {
+
+		        if (!topics[topic]) {
+		            topics[topic] = [];
+		        }
+
+		        var token = (++subUid).toString();
+		        topics[topic].push({
+		            token: token,
+		            func: func
+		        });
+		        return token;
+		    };
+		    //退订方法
+		    q.unsubscribe = function (token) {
+		        for (var m in topics) {
+		            if (topics[m]) {
+		                for (var i = 0, j = topics[m].length; i < j; i++) {
+		                    if (topics[m][i].token === token) {
+		                        topics[m].splice(i, 1);
+		                        return token;
+		                    }
+		                }
+		            }
+		        }
+		        return false;
+		    };
+		} (pubsub));
+
+		//来，订阅一个
+		pubsub.subscribe('example1', function (topics, data) {
+		    console.log(topics + ": " + data);
+		});
+
+		//发布通知
+		// pubsub.publish('example1', 'hello world!');
+		// pubsub.publish('example1', ['test', 'a', 'b', 'c']);
+		// pubsub.publish('example1', [{ 'color': 'blue' }, { 'text': 'hello'}]);
+
+
+		function imgScale(param){
+		}
+
+		imgScale.prototype = {
+			init: function(param){
+				this.event(param)
+			},
+			event: function(param){
+				var addFile = $('#addFile');
+				var _this = this;
+				addFile.on('change', function(){
+					var files = $(this).get(0).files[0];
+					
+						if(!$('#width1').val() && !$('#height1').val()){
+							alert('请输入大小');
+							return;
+						}
+						param.width = $('#width1').val() ;
+						param.height = $('#height1').val();
+
+					if(_this.checkImgType(files.type)){
+						_this.getBase64(files)
+						pubsub.subscribe('imgBase64', function (topics, data) {
+							_this.imgOnload(data, param)
+						});
+						pubsub.subscribe('imgOnload', function (topics, img) {
+							var size = _this.getSize(param, img)
+							_this.drawImg(img, param, size)
+						});
+					
+						if(param.preOriginalImg){
+							_this.preOriginalImg(param.preOriginalImg, files.name)
+						}
+						addFile.val('')
+					}else{
+						alert('请上传jpg或jpeg或png格式图片！')
+						addFile.val('')
+						return;
+					}
+				})
+			},
+			getSize: function(param, img){
+				var canvasW = 0;
+				var canvasH = 0;
+
+				if(param.width && param.height){
+					canvasW = param.width;
+					canvasH = param.height;
+				}else if(param.width && !param.height){
+					canvasW = param.width;
+					canvasH = param.width / (img.width / img.height);
+				}else if(!param.width && param.height){
+					canvasW = param.height / (img.height / img.width);
+					canvasH = param.height;
+				}
+				return {
+					canvasW: Math.round(canvasW),
+					canvasH: Math.round(canvasH)
+				}
+			},
+			drawImg: function(img, param, size){
+				var myCanvas = document.querySelector(param.preview) || document.createElement('canvas');
+				var ctx      = myCanvas.getContext("2d");
+				myCanvas.width   = size.canvasW || 50;
+				myCanvas.height  = size.canvasH || 50;
+
+				if(param.preview){
+					ctx.drawImage(img,0,0,size.canvasW,size.canvasH);
+				}
+
+				if(param.callback){
+					param.callback(myCanvas.toDataURL())
+				}
+			},
+			imgOnload: function(data, param){
+				var _this = this;
+				var img = new Image();
+				img.src = data;
+				img.onload = function(){
+					pubsub.publish('imgOnload', img);
+				}
+			},
+			// 获取图片base64
+			getBase64: function(file){
+				var reader = new FileReader();
+				reader.onload = function(){
+				    pubsub.publish('imgBase64', this.result);
+				}
+				reader.readAsDataURL(file);
+			},
+			checkImgType: function(type){
+				// 接受 jpeg, jpg, png 类型的图片
+				return /(jpeg|jpg|png)/i.test(type)
+			},
+			// 预览原始图片
+			preOriginalImg: function(selector, src){
+				$(selector).html('').append('<img src="'+src+'" alt="" id="img">')
+			}
+		}
+
+		
+		var a = new imgScale();
+		a.init({
+			'width': 150,
+			'height': 150,
+			'upload': '#addFile',
+			'preview': '#myCanvas',
+			'preOriginalImg':'#original',
+			'callback': aaa
+		})
+		
+		function aaa(data){
+			//console.log(data)
+		}
+	</script>
+</body>
+</html>
